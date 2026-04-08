@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const authRoutes = require('./routes/authRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -33,6 +34,9 @@ app.get('/api/health', (req, res) => {
     message: 'Server is healthy',
   });
 });
+
+// Auth Routes
+app.use('/api/auth', authRoutes);
 
 // Error handling for undefined routes
 app.use((req, res) => {

@@ -59,11 +59,28 @@ The server will start on `http://localhost:5000`
 
 ## API Endpoints
 
+### Authentication (Day 2)
+- **POST** `/api/auth/register` - Register a new user
+- **POST** `/api/auth/login` - Login and receive JWT token
+- **GET** `/api/auth/me` - Get current user (protected)
+
 ### Health Check
 - **GET** `/api/health` - Check server health
 
 ### Home
 - **GET** `/` - Welcome message
+
+## Authentication Features
+
+✅ Secure password hashing with bcryptjs
+✅ JWT token generation and validation
+✅ Email uniqueness validation
+✅ Password confirmation
+✅ Protected routes with middleware
+✅ 30-day token expiration
+✅ Role-based access (user, admin, vendor)
+
+For complete API testing guide, see `API_TESTING_GUIDE.md`
 
 ## MongoDB Atlas Setup
 
@@ -73,9 +90,9 @@ The server will start on `http://localhost:5000`
 4. Get the connection string
 5. Add your connection string to `.env` file
 
-## Features (To be implemented)
+## Features
 
-- [ ] User authentication
+- [x] User authentication (Day 2)
 - [ ] Turf booking management
 - [ ] Payment integration
 - [ ] User profile management
