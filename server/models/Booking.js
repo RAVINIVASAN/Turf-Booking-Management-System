@@ -32,6 +32,45 @@ const bookingSchema = new mongoose.Schema(
       required: [true, 'Please provide booking price'],
       min: [0, 'Price cannot be negative'],
     },
+    priceBreakdown: {
+      basePrice: {
+        type: Number,
+        default: 0,
+      },
+      peakMultiplier: {
+        type: Number,
+        default: 1.0,
+      },
+      priceAfterPeakMultiplier: {
+        type: Number,
+        default: 0,
+      },
+      isPeakTime: {
+        type: Boolean,
+        default: false,
+      },
+      demandAdjustment: {
+        type: Number,
+        default: 0,
+      },
+      demandApplied: {
+        type: Boolean,
+        default: false,
+      },
+      percentageIncrease: {
+        type: Number,
+        default: 0,
+      },
+    },
+    priceCategory: {
+      type: String,
+      enum: ['morning', 'afternoon', 'evening'],
+      default: 'afternoon',
+    },
+    categoryLabel: {
+      type: String,
+      default: 'Afternoon',
+    },
     paymentStatus: {
       type: String,
       enum: ['pending', 'paid', 'cancelled', 'refunded'],

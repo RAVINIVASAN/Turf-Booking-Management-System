@@ -1,6 +1,7 @@
 const Booking = require('../models/Booking');
 const Turf = require('../models/Turf');
 const User = require('../models/User');
+const { calculateDynamicPrice } = require('../utils/pricing');
 
 // @desc    Create a new booking
 // @route   POST /api/bookings/create
@@ -74,28 +75,57 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // Determine price based on time slot
-    const slotHour = parseInt(timeSlot.split('AM')[0] || timeSlot.split('PM')[0]);
-    let price;
+    // CALCULATE DYNAMIC PRICE
+    // Step 1: Count existing bookings for this turf on the same date (for demand-based pricing)
+    const bookingCountOnDate = await Booking.countDocuments({
+      turfId: turfId,
+      date: {
+        $gte: bookingDate,
+        $lt: new Date(bookingDate.getTime() + 24 * 60 * 60 * 1000),
+      },
+      bookingStatus: { $ne: 'cancelled' },
+    });
 
-    if (slotHour >= 6 && slotHour < 12) {
-      // Morning
-      price = turf.priceSlots.morning || 500;
-    } else if (slotHour >= 12 && slotHour < 17) {
-      // Afternoon
-      price = turf.priceSlots.afternoon || 700;
-    } else {
-      // Evening
-      price = turf.priceSlots.evening || 1000;
+    // Step 2: Calculate dynamic price using pricing utility
+    const pricingResult = calculateDynamicPrice(
+      turf.priceSlots,
+      timeSlot,
+      bookingCountOnDate,
+      {
+        enableDemandPricing: true,
+        demandThreshold: 3, // If more than 3 bookings, apply surge pricing
+        demandMultiplier: 100, // Add ₹100 per additional booking beyond threshold
+      }
+    );
+
+    // Step 3: Check if pricing calculation was successful
+    if (!pricingResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: pricingResult.message,
+      });
     }
 
-    // Create booking
+    const finalPrice = pricingResult.pricing.finalPrice;
+
+    // Create booking with dynamic pricing details
     const booking = await Booking.create({
       userId: userId,
       turfId: turfId,
       date: bookingDate,
       timeSlot: timeSlot,
-      price: price,
+      price: finalPrice,
+      priceBreakdown: {
+        basePrice: pricingResult.pricing.basePrice,
+        peakMultiplier: pricingResult.pricing.peakMultiplier,
+        priceAfterPeakMultiplier: pricingResult.pricing.priceAfterPeakMultiplier,
+        isPeakTime: pricingResult.pricing.isPeakTime,
+        demandAdjustment: pricingResult.pricing.demandAdjustment,
+        demandApplied: pricingResult.pricing.demandApplied,
+        percentageIncrease: pricingResult.pricing.percentageIncrease,
+      },
+      priceCategory: pricingResult.details.category,
+      categoryLabel: pricingResult.details.categoryLabel,
       totalPlayers: totalPlayers || 1,
       notes: notes || '',
     });
@@ -109,6 +139,17 @@ exports.createBooking = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Booking created successfully',
+      pricingInfo: {
+        basePrice: pricingResult.pricing.basePrice,
+        priceAfterPeakMultiplier: pricingResult.pricing.priceAfterPeakMultiplier,
+        peakMultiplier: `${(pricingResult.pricing.peakMultiplier * 100).toFixed(0)}%`,
+        isPeakTime: pricingResult.pricing.isPeakTime,
+        demandAdjustment: pricingResult.pricing.demandAdjustment,
+        demandApplied: pricingResult.pricing.demandApplied,
+        percentageIncrease: `${pricingResult.pricing.percentageIncrease}%`,
+        finalPrice: pricingResult.pricing.finalPrice,
+        priceCategory: pricingResult.details.categoryLabel,
+      },
       data: booking,
     });
   } catch (error) {
