@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const turfRoutes = require('./routes/turfRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -37,6 +38,9 @@ app.get('/api/health', (req, res) => {
 
 // Auth Routes
 app.use('/api/auth', authRoutes);
+
+// Turf Routes
+app.use('/api/turfs', turfRoutes);
 
 // Error handling for undefined routes
 app.use((req, res) => {
