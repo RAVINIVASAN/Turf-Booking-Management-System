@@ -1,11 +1,18 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-// Generate JWT Token
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
+// Generate JWT Token with user data
+const generateToken = (userId, userRole = 'user') => {
+  return jwt.sign(
+    {
+      id: userId,
+      role: userRole,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '30d',
+    }
+  );
 };
 
 // @desc    Register a new user
@@ -13,21 +20,13 @@ const generateToken = (userId) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const { name, email, password } = req.body;
 
     // Validation
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide all required fields: name, email, password, confirmPassword',
-      });
-    }
-
-    // Check if passwords match
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Passwords do not match',
+        message: 'Please provide all required fields: name, email, password',
       });
     }
 
@@ -48,8 +47,8 @@ exports.register = async (req, res) => {
       role: 'user',
     });
 
-    // Generate token
-    const token = generateToken(user._id);
+    // Generate token with role
+    const token = generateToken(user._id, user.role);
 
     // Return response
     res.status(201).json({
@@ -136,8 +135,8 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate token
-    const token = generateToken(user._id);
+    // Generate token with role
+    const token = generateToken(user._id, user.role);
 
     // Return response
     res.status(200).json({

@@ -1,0 +1,331 @@
+@import 'leaflet/dist/leaflet.css';
+@import "tailwindcss";
+
+/* CSS Variables */
+:root {
+  /* Primary Colors - Teal & Green Theme */
+  --color-primary: #0f766e;
+  --color-primary-light: #14b8a6;
+  --color-primary-lighter: #99f6e4;
+  --color-primary-dark: #0d5c55;
+
+  /* Secondary Colors */
+  --color-secondary: #14b8a6;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Neutral Colors */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-700: #374151;
+  --color-gray-900: #111827;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--color-gray-50);
+    color: var(--color-gray-900);
+  }
+}
+
+/* Animations */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Tailwind CSS Component Extensions */
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow;
+  }
+
+  .card-lg {
+    @apply bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-info {
+    @apply bg-blue-100 text-blue-800;
+  }
+
+  /* Buttons */
+  .btn-base {
+    @apply font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2;
+  }
+
+  .btn-primary {
+    @apply font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 bg-teal-600 text-white hover:bg-teal-700 active:bg-teal-800 disabled:bg-gray-400 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 bg-gray-200 text-gray-800 hover:bg-gray-300 active:bg-gray-400;
+  }
+
+  .btn-ghost {
+    @apply font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 text-teal-600 hover:bg-teal-50;
+  }
+
+  /* Forms */
+  .input-base {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all;
+  }
+
+  .input-base:disabled {
+    @apply bg-gray-100 cursor-not-allowed;
+  }
+
+  /* Utilities */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md;
+  }
+
+  .gradient-primary {
+    @apply bg-gradient-to-br from-teal-50 to-emerald-50;
+  }
+
+  .gradient-primary-strong {
+    @apply bg-gradient-to-br from-teal-400 to-emerald-400;
+  }
+
+  .text-primary {
+    @apply text-teal-600;
+  }
+
+  .text-primary-hover {
+    @apply hover:text-teal-700 transition-colors;
+  }
+
+  .underline-primary {
+    @apply border-b-2 border-teal-600;
+  }
+}
+
+/* Animations */
+.animate-slide-in {
+  animation: slide-in var(--transition-base);
+}
+
+.animate-slide-out {
+  animation: slide-out var(--transition-base);
+}
+
+.animate-fade-in {
+  animation: fade-in var(--transition-base);
+}
+
+/* Animations */
+.animate-slide-in {
+  animation: slide-in var(--transition-base);
+}
+
+.animate-slide-out {
+  animation: slide-out var(--transition-base);
+}
+
+.animate-fade-in {
+  animation: fade-in var(--transition-base);
+}
+
+.animate-fade-out {
+  animation: fade-out var(--transition-base);
+}
+
+.animate-scale-in {
+  animation: scale-in var(--transition-base);
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gray-50);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* Leaflet Map Customization */
+.leaflet-container {
+  font-family: inherit;
+  font-size: 14px;
+  background-color: var(--color-gray-50) !important;
+}
+
+.leaflet-popup-content {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.leaflet-popup {
+  border-radius: var(--radius-lg);
+}
+
+.leaflet-control-attribution {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border-radius: var(--radius-md);
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+  transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1);
+}
+
+.leaflet-control {
+  border-radius: var(--radius-lg);
+}
+
+.leaflet-control-zoom,
+.leaflet-control-attribution {
+  border: none;
+  box-shadow: var(--shadow-lg);
+  background-color: white;
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white;
+  }
+
+  .no-print {
+    display: none;
+  }
+}

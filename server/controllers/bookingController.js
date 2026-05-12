@@ -2,6 +2,7 @@ const Booking = require('../models/Booking');
 const Turf = require('../models/Turf');
 const User = require('../models/User');
 const { calculateDynamicPrice } = require('../utils/pricing');
+const { sendBookingNotification, sendUserBookingConfirmation } = require('../utils/email');
 
 // @desc    Create a new booking
 // @route   POST /api/bookings/create
@@ -135,6 +136,14 @@ exports.createBooking = async (req, res) => {
       { path: 'userId', select: 'name email phoneNumber' },
       { path: 'turfId', select: 'name location priceSlots' },
     ]);
+
+    // Send emails to turf owner and user
+    try {
+      await sendBookingNotification(turf, user, booking);
+      await sendUserBookingConfirmation(user, turf, booking);
+    } catch (emailError) {
+      console.warn('Email sending failed, but booking was created:', emailError.message);
+    }
 
     res.status(201).json({
       success: true,

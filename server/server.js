@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const turfRoutes = require('./routes/turfRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -45,6 +46,9 @@ app.use('/api/turfs', turfRoutes);
 
 // Booking Routes
 app.use('/api/bookings', bookingRoutes);
+
+// Admin Routes
+app.use('/api/admin', adminRoutes);
 
 // Error handling for undefined routes
 app.use((req, res) => {

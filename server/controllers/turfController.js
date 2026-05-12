@@ -1,4 +1,12 @@
 const Turf = require('../models/Turf');
+const Booking = require('../models/Booking');
+const mongoose = require('mongoose');
+
+const ALL_TIME_SLOTS = [
+  '6AM-7AM', '7AM-8AM', '8AM-9AM', '9AM-10AM', '10AM-11AM', '11AM-12PM',
+  '12PM-1PM', '1PM-2PM', '2PM-3PM', '3PM-4PM', '4PM-5PM', '5PM-6PM',
+  '6PM-7PM', '7PM-8PM', '8PM-9PM', '9PM-10PM',
+];
 
 // Haversine formula to calculate distance between two coordinates
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -214,6 +222,139 @@ exports.getNearbyTurfs = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while fetching nearby turfs',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+// @desc    Get nearby turfs with availability for a specific date
+// @route   GET /api/turfs/nearby-with-availability?latitude=X&longitude=Y&date=YYYY-MM-DD&maxDistance=10
+// @access  Public
+exports.getNearbyTurfsWithAvailability = async (req, res) => {
+  try {
+    const { latitude, longitude, maxDistance, date, page, limit } = req.query;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide latitude and longitude query parameters',
+      });
+    }
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Latitude and longitude must be valid numbers',
+      });
+    }
+
+    const userLat = parseFloat(latitude);
+    const userLon = parseFloat(longitude);
+    const distance = maxDistance ? parseFloat(maxDistance) : 10;
+    const pageNumber = page ? parseInt(page, 10) : 1;
+    const pageSize = limit ? parseInt(limit, 10) : 20;
+
+    if (isNaN(pageNumber) || pageNumber < 1 || isNaN(pageSize) || pageSize < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Page and limit must be positive integers',
+      });
+    }
+
+    const targetDate = date ? new Date(date) : new Date();
+    if (isNaN(targetDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid date format. Use YYYY-MM-DD',
+      });
+    }
+
+    const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+    const turfs = await Turf.find({ isActive: true }).select('-__v');
+
+    const nearbyTurfs = turfs
+      .map((turf) => {
+        const dist = calculateDistance(userLat, userLon, turf.latitude, turf.longitude);
+        return {
+          ...turf.toObject(),
+          distance: parseFloat(dist.toFixed(2)),
+        };
+      })
+      .filter((turf) => turf.distance <= distance)
+      .sort((a, b) => a.distance - b.distance);
+
+    const totalCount = nearbyTurfs.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const startIndex = (pageNumber - 1) * pageSize;
+    const paginatedNearbyTurfs = nearbyTurfs.slice(startIndex, startIndex + pageSize);
+
+    const turfIds = paginatedNearbyTurfs.map((turf) => turf._id);
+    const bookingMatch = {
+      bookingStatus: { $ne: 'cancelled' },
+      date: {
+        $gte: startOfDay,
+        $lt: endOfDay,
+      },
+      turfId: { $in: turfIds.map((id) => new mongoose.Types.ObjectId(id)) },
+    };
+
+    const bookings = turfIds.length > 0
+      ? await Booking.aggregate([
+        { $match: bookingMatch },
+        { $project: { turfId: 1, timeSlot: 1 } },
+      ])
+      : [];
+
+    const bookedSlotsByTurf = bookings.reduce((acc, booking) => {
+      const turfId = booking.turfId.toString();
+      if (!acc[turfId]) {
+        acc[turfId] = [];
+      }
+      acc[turfId].push(booking.timeSlot);
+      return acc;
+    }, {});
+
+    const responseData = paginatedNearbyTurfs.map((turf) => {
+      const turfId = turf._id.toString();
+      const bookedSlots = bookedSlotsByTurf[turfId] || [];
+      const availableSlots = ALL_TIME_SLOTS.filter((slot) => !bookedSlots.includes(slot));
+
+      return {
+        ...turf,
+        availability: {
+          date: startOfDay.toISOString().split('T')[0],
+          bookedSlots,
+          availableSlots,
+          totalBookings: bookedSlots.length,
+        },
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      count: responseData.length,
+      userLocation: {
+        latitude: userLat,
+        longitude: userLon,
+      },
+      maxDistance: `${distance} km`,
+      date: startOfDay.toISOString().split('T')[0],
+      pagination: {
+        page: pageNumber,
+        limit: pageSize,
+        totalCount,
+        totalPages,
+        hasMore: pageNumber < totalPages,
+      },
+      data: responseData,
+    });
+  } catch (error) {
+    console.error('Get Nearby Turfs With Availability Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching nearby turfs with availability',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
